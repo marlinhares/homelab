@@ -6,6 +6,8 @@ services:
     restart: unless-stopped
     volumes:
       - firefly_iii_upload:/var/www/html/storage/upload
+    env_file:
+      - .env
     networks:
       - firefly_iii
       - net-db
@@ -13,18 +15,18 @@ services:
     labels:
       - traefik.enable=true
       - traefik.docker.network=net-traefik
-      - traefik.http.routers.firefly-redir.rule=Host(`money`)
+      - traefik.http.routers.firefly-redir.rule=Host(`${SERVICE_NAME_URL}`)
       - traefik.http.routers.firefly-redir.entrypoints=web
       - traefik.http.routers.firefly-redir.middlewares=mgeneralredir
-      - traefik.http.routers.firefly-redir-https.rule=Host(`money`)
+      - traefik.http.routers.firefly-redir-https.rule=Host(`${SERVICE_NAME_URL}`)
       - traefik.http.routers.firefly-redir-https.entrypoints=websecure
       - traefik.http.routers.firefly-redir-https.middlewares=mgeneralredir
       - traefik.http.routers.firefly-redir-https.tls=true
       - traefik.http.routers.firefly.entrypoints=web
-      - traefik.http.routers.firefly.rule=Host(`money.cristo.dev.br`)
+      - traefik.http.routers.firefly.rule=Host(`${SERVICE_NAME_URL}.${DOMAIN_NAME}`)
       - traefik.http.routers.firefly.middlewares=redirect-to-https
       - traefik.http.routers.firefly-https.entrypoints=websecure
-      - traefik.http.routers.firefly-https.rule=Host(`money.cristo.dev.br`)
+      - traefik.http.routers.firefly-https.rule=Host(`${SERVICE_NAME_URL}.${DOMAIN_NAME}`)
       - traefik.http.routers.firefly-https.tls=true
     ports:
       - 8082:8080
@@ -49,6 +51,8 @@ services:
     #
     image: alpine
     restart: unless-stopped
+    env_file:
+      - .env
     container_name: firefly_iii_cron
     command: sh -c " apk add tzdata && \ (ln -s /usr/share/zoneinfo/$$TZ
       /etc/localtime || true) && \ echo \"0 3 * * * wget -qO-

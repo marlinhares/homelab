@@ -1,0 +1,47 @@
+volumes:
+  homepage:
+    external: true
+
+networks: 
+  net-traefik:
+    external: true
+
+services:
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    restart: unless-stopped
+    container_name: homepage
+    labels:
+      - traefik.enable=true
+
+      - traefik.http.routers.homepage-redir.rule=Host(`${SERVICE_NAME_URL}`)
+      - traefik.http.routers.homepage-redir.entrypoints=web
+      - traefik.http.routers.homepage-redir.middlewares=mgeneralredir
+
+      - traefik.http.routers.homepage-redir-https.rule=Host(`${SERVICE_NAME_URL}`)
+      - traefik.http.routers.homepage-redir-https.entrypoints=websecure
+      - traefik.http.routers.homepage-redir-https.middlewares=mgeneralredir
+      - traefik.http.routers.homepage-redir-https.tls=true
+            
+      - traefik.http.routers.homepage.entrypoints=web
+      - traefik.http.routers.homepage.rule=Host(`${SERVICE_NAME_URL}.${DOMAIN_NAME}`)
+      - traefik.http.routers.homepage.middlewares=redirect-to-https
+            
+      - traefik.http.routers.homepage-https.entrypoints=websecure
+      - traefik.http.routers.homepage-https.rule=Host(`${SERVICE_NAME_URL}.${DOMAIN_NAME}`)
+      - traefik.http.routers.homepage-https.tls=true
+      - traefik.http.routers.homepage-https.middlewares=homepage-rate,homepage-auth
+      - traefik.http.middlewares.homepage-rate.rateLimit.average=1
+      - traefik.http.middlewares.homepage-rate.rateLimit.burst=50
+      - traefik.http.middlewares.homepage-rate.rateLimit.period=1s
+      - traefik.http.middlewares.homepage-auth.basicauth.users=${HOMEPAGE_BASIC_AUTH}
+    ports:
+      - 3002:3000
+    networks: 
+      - net-traefik
+    volumes:
+      - homepage:/app/config # Make sure your local config directory exists
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      HOMEPAGE_ALLOWED_HOSTS: "*"
+      TZ: America/Sao_Paulo

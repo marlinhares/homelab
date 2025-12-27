@@ -7,21 +7,21 @@ services:
     labels:
       - traefik.enable=true
             
-      - traefik.http.routers.dockge-redir.rule=Host(`dockge`)
+      - traefik.http.routers.dockge-redir.rule=Host(`${SERVICE_NAME_URL}`)
       - traefik.http.routers.dockge-redir.entrypoints=web
       - traefik.http.routers.dockge-redir.middlewares=mgeneralredir
 
-      - traefik.http.routers.dockge-redir-https.rule=Host(`dockge`)
+      - traefik.http.routers.dockge-redir-https.rule=Host(`${SERVICE_NAME_URL}`)
       - traefik.http.routers.dockge-redir-https.entrypoints=websecure
       - traefik.http.routers.dockge-redir-https.middlewares=mgeneralredir
       - traefik.http.routers.dockge-redir-https.tls=true
             
       - traefik.http.routers.dockge.entrypoints=web
-      - traefik.http.routers.dockge.rule=Host(`dockge.cristo.dev.br`)
+      - traefik.http.routers.dockge.rule=Host(`${SERVICE_NAME_URL}.${DOMAIN_NAME}`)
       - traefik.http.routers.dockge.middlewares=redirect-to-https
             
       - traefik.http.routers.dockge-https.entrypoints=websecure
-      - traefik.http.routers.dockge-https.rule=Host(`dockge.cristo.dev.br`)
+      - traefik.http.routers.dockge-https.rule=Host(`${SERVICE_NAME_URL}.${DOMAIN_NAME}`)
       - traefik.http.routers.dockge-https.tls=true
     ports:
       - ${DOCKGE_PORT}:5001
@@ -36,6 +36,7 @@ services:
     environment:
       # Tell Dockge where to find the stacks
       - DOCKGE_STACKS_DIR=${DOCKGE_STACKS_DIR}
+      - TZ=America/Sao_Paulo
 volumes:
   dockge:
     external: true
