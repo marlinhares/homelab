@@ -1,0 +1,44 @@
+services:
+  dockge:
+    image: louislam/dockge:1
+    restart: unless-stopped
+    networks:
+      - net-traefik
+    labels:
+      - traefik.enable=true
+            
+      - traefik.http.routers.dockge-redir.rule=Host(`dockge`)
+      - traefik.http.routers.dockge-redir.entrypoints=web
+      - traefik.http.routers.dockge-redir.middlewares=mgeneralredir
+
+      - traefik.http.routers.dockge-redir-https.rule=Host(`dockge`)
+      - traefik.http.routers.dockge-redir-https.entrypoints=websecure
+      - traefik.http.routers.dockge-redir-https.middlewares=mgeneralredir
+      - traefik.http.routers.dockge-redir-https.tls=true
+            
+      - traefik.http.routers.dockge.entrypoints=web
+      - traefik.http.routers.dockge.rule=Host(`dockge.cristo.dev.br`)
+      - traefik.http.routers.dockge.middlewares=redirect-to-https
+            
+      - traefik.http.routers.dockge-https.entrypoints=websecure
+      - traefik.http.routers.dockge-https.rule=Host(`dockge.cristo.dev.br`)
+      - traefik.http.routers.dockge-https.tls=true
+    ports:
+      - ${DOCKGE_PORT}:5001
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${DOCKGE_VOLUME}:/app/data
+      # Stacks Directory
+      # ⚠️ READ IT CAREFULLY. If you did it wrong, your data could end up writing into a WRONG PATH.
+      # ⚠️ 1. FULL path only. No relative path (MUST)
+      # ⚠️ 2. Left Stacks Path === Right Stacks Path (MUST)
+      - ${DOCKGE_STACKS_DIR}:${DOCKGE_STACKS_DIR}
+    environment:
+      # Tell Dockge where to find the stacks
+      - DOCKGE_STACKS_DIR=${DOCKGE_STACKS_DIR}
+volumes:
+  dockge:
+    external: true
+networks:
+  net-traefik:
+    external: true
