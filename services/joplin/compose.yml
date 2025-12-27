@@ -1,0 +1,52 @@
+# alterei o proposto pelo autor
+# para persistir o sqllite copiei a pasta server e transformei em um volume
+# o autor sugere o uso de um postgres externo
+# essa montagem podera gerar problema no futuro
+
+services:
+  joplin:
+    image: joplin/server:3.4.3
+    container_name: joplin
+    networks: 
+      - net-traefik
+    environment:
+      - TZ=America/Sao_Paulo
+      - STORAGE_DRIVER=Type=Filesystem; Path=/minhasnotas
+      - APP_PORT=22300
+      - APP_BASE_URL=${APP_BASE_URL}
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      
+      - traefik.http.routers.joplin-redir.rule=Host(`${SERVICE_NAME_URL}`)
+      - traefik.http.routers.joplin-redir.entrypoints=web
+      - traefik.http.routers.joplin-redir.middlewares=mgeneralredir
+
+      - traefik.http.routers.joplin-redir-https.rule=Host(`${SERVICE_NAME_URL}`)
+      - traefik.http.routers.joplin-redir-https.entrypoints=websecure
+      - traefik.http.routers.joplin-redir-https.middlewares=mgeneralredir
+      - traefik.http.routers.joplin-redir-https.tls=true
+            
+      - traefik.http.routers.joplin-http.entrypoints=web
+      - traefik.http.routers.joplin-http.rule=Host(`${SERVICE_NAME_URL}.${DOMAIN_NAME}`)
+      - traefik.http.routers.joplin-http.middlewares=redirect-to-https
+            
+      - traefik.http.routers.joplin-https.entrypoints=websecure
+      - traefik.http.routers.joplin-https.rule=Host(`${SERVICE_NAME_URL}.${DOMAIN_NAME}`)
+
+      - traefik.http.routers.joplin-https.tls=true
+    volumes:
+      - joplin-files:/minhasnotas
+      - joplin-server:/home/joplin/packages/server
+    ports:
+      - 22300:22300
+
+volumes:
+  joplin-files:
+    external: true
+  joplin-server:
+    external: true
+
+networks:
+  net-traefik:
+    external: true

@@ -1,0 +1,51 @@
+services:
+    # Koillection
+    koillection:
+        image: koillection/koillection
+        container_name: koillection
+        restart: unless-stopped
+        networks: 
+          - net-traefik
+          - net-db
+        labels:
+          - traefik.enable=true
+
+          - traefik.http.routers.koillection-https.rule=Host(`${SERVICE_NAME_URL}.${DOMAIN_NAME}`)
+          - traefik.http.routers.koillection-https.entrypoints=websecure
+          - traefik.http.routers.koillection-https.tls=true
+          - traefik.docker.network=net-traefik
+          
+
+          - traefik.http.routers.koillection-redir.rule=Host(`${SERVICE_NAME_URL}`)
+          - traefik.http.routers.koillection-redir.entrypoints=web
+          - traefik.http.routers.koillection-redir.middlewares=mgeneralredir
+
+          - traefik.http.routers.koillection-redir-https.rule=Host(`${SERVICE_NAME_URL}`)
+          - traefik.http.routers.koillection-redir-https.entrypoints=websecure
+          - traefik.http.routers.koillection-redir-https.middlewares=mgeneralredir
+          - traefik.http.routers.koillection-redir-https.tls=true
+            
+          - traefik.http.routers.koillection-http.entrypoints=web
+          - traefik.http.routers.koillection-http.rule=Host(`${SERVICE_NAME_URL}.${DOMAIN_NAME}`)
+          - traefik.http.routers.koillection-http.middlewares=redirect-to-https
+        env_file:
+          - .env
+        ports:
+            - 8087:80
+
+        #depends_on:
+        #    - db
+        volumes:
+            - mykoillection-upload:/uploads
+
+volumes:
+  mykoillection-db:
+    external: true
+  mykoillection-upload:
+    external: true
+
+networks:
+  net-traefik:
+    external: true
+  net-db:
+    external: true

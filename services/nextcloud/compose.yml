@@ -1,0 +1,47 @@
+volumes:
+  nextcloud:
+    external: true
+
+networks:
+  net-db:
+    external: true
+  net-traefik:
+    external: true
+
+services:
+
+  app:
+    image: nextcloud:stable
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+
+      - traefik.http.routers.nextcloud-redir.rule=Host(`${SERVICE_NAME_URL}`)
+      - traefik.http.routers.nextcloud-redir.entrypoints=web
+      - traefik.http.routers.nextcloud-redir.middlewares=mgeneralredir
+
+      - traefik.http.routers.nextcloud-redir-https.rule=Host(`${SERVICE_NAME_URL}`)
+      - traefik.http.routers.nextcloud-redir-https.entrypoints=websecure
+      - traefik.http.routers.nextcloud-redir-https.middlewares=mgeneralredir
+      - traefik.http.routers.nextcloud-redir-https.tls=true
+            
+      - traefik.http.routers.nextcloud.entrypoints=web
+      - traefik.http.routers.nextcloud.rule=Host(`${SERVICE_NAME_URL}.${DOMAIN_NAME}`)
+      - traefik.http.routers.nextcloud.middlewares=redirect-to-https
+            
+      - traefik.http.routers.nextcloud-https.entrypoints=websecure
+      - traefik.http.routers.nextcloud-https.rule=Host(`${SERVICE_NAME_URL}.${DOMAIN_NAME}`)
+      - traefik.http.routers.nextcloud-https.tls=true
+      - traefik.docker.network=net-traefik
+
+    ports:
+      - 8081:80
+    networks:
+      - net-db
+      - net-traefik
+    volumes:
+      - nextcloud:/var/www/html
+
+    env_file:
+      - .env
+      

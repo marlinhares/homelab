@@ -1,0 +1,46 @@
+version: "3"
+services:
+  yacreaderlibraryserver:
+    container_name: YACReaderLibraryServer
+    image: yacreader/yacreaderlibraryserver:9.15.0
+    networks:
+      - net-traefik
+    environment:
+      - PUID=99
+      - PGID=100
+      - TZ=America/Sao_Paulo
+    labels:
+      - traefik.enable=true
+
+      - traefik.http.routers.comics-redir.rule=Host(`comics`) || Host(`${SERVICE_NAME_URL}`)
+      - traefik.http.routers.comics-redir.entrypoints=web
+      - traefik.http.routers.comics-redir.middlewares=mgeneralredir
+
+      - traefik.http.routers.comics-redir-https.rule=Host(`comics`) || Host(`${SERVICE_NAME_URL}`)
+      - traefik.http.routers.comics-redir-https.entrypoints=websecure
+      - traefik.http.routers.comics-redir-https.middlewares=mgeneralredir
+      - traefik.http.routers.comics-redir-https.tls=true
+            
+      - traefik.http.routers.comics.entrypoints=web
+      - traefik.http.routers.comics.rule=Host(`comics.cristo.dev.br`) || Host(`${SERVICE_NAME_URL}.${DOMAIN_NAME}`)
+      - traefik.http.routers.comics.middlewares=redirect-to-https
+            
+      - traefik.http.routers.comics-https.entrypoints=websecure
+      - traefik.http.routers.comics-https.rule=Host(`comics.cristo.dev.br`) || Host(`${SERVICE_NAME_URL}.${DOMAIN_NAME}`)
+
+      - traefik.http.routers.comics-https.tls=true
+    volumes:
+      - yacreaderlibraryconfig:/config
+      - yacreaderlibrarydata:/comics
+    ports:
+      - 9999:8080
+    restart: unless-stopped
+volumes:
+  yacreaderlibraryconfig:
+    external: true
+  yacreaderlibrarydata:
+    external: true
+
+networks:
+  net-traefik:
+    external: true

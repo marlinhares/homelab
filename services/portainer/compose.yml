@@ -1,0 +1,42 @@
+services:
+  portainer:
+    image: portainer/portainer-ee:lts
+    container_name: portainer
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+
+      - traefik.http.routers.portainer-https.rule=Host(`${SERVICE_NAME_URL}.${DOMAIN_NAME}`)
+      - traefik.http.routers.portainer-https.entrypoints=websecure
+      - traefik.http.routers.portainer-https.tls=true
+      - traefik.http.services.portainer-svc.loadbalancer.server.url=${PORTAINER_BACKEND_URL}
+
+      - traefik.http.routers.portainer-redir.rule=Host(`${SERVICE_NAME_URL}`)
+      - traefik.http.routers.portainer-redir.entrypoints=web
+      - traefik.http.routers.portainer-redir.middlewares=mgeneralredir
+
+      - traefik.http.routers.portainer-redir-https.rule=Host(`${SERVICE_NAME_URL}`)
+      - traefik.http.routers.portainer-redir-https.entrypoints=websecure
+      - traefik.http.routers.portainer-redir-https.middlewares=mgeneralredir
+      - traefik.http.routers.portainer-redir-https.tls=true
+
+      - traefik.http.routers.portainer-http.entrypoints=web
+      - traefik.http.routers.portainer-http.rule=Host(`${SERVICE_NAME_URL}.${DOMAIN_NAME}`)
+      - traefik.http.routers.portainer-http.middlewares=redirect-to-https
+    ports:
+      - 8000:8000
+      - 9443:9443
+    volumes:
+      - myportainer:/data
+      - /etc/localtime:/etc/localtime:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - net-traefik
+
+volumes:
+  myportainer:
+    external: true
+
+networks:
+  net-traefik:
+    external: true
